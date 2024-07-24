@@ -232,9 +232,11 @@ class SUBMIT_INFERENCE:
     def run(self):
         video_caption=self.get_video_caption()
         for video in video_caption:
+            idx=0
             for caption in video_caption[video]:
+                idx=idx+1
                 print("Video: ",video)
-                print("Caption: ",caption)
+                print("Caption: ",caption, " Process {}/{}".format(idx,len(video_caption[video])))
                 predict_path=self.generate_submit(video_path=os.path.join(self.config["VIDEO_SRC"],f"{video}.mp4"),caption=caption)
                 print("Predict path: ",predict_path)
                 #copy gt to submit folder

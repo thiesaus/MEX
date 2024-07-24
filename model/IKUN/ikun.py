@@ -174,7 +174,7 @@ def get_transform(mode, opt, idx):
             T.ToTensor(),
             T.Normalize(opt["NORM_MEAN"], opt["NORM_STD"]),
         ])
-    elif mode == 'inf':
+    elif mode == 'inf' or mode=="submitinf":
         return T.Compose([
             SquarePad(),
             T.Resize(opt["IMG_HW"][idx]),
