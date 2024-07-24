@@ -212,10 +212,7 @@ class SUBMIT_INFERENCE:
                         online_ids.append(tracks_result.ids[i].item())
                         with open(predict_path, "a") as f:
                             f.write(f"{frame_id},{tracks_result.ids[i].item()},{x1},{y1},{w},{h},1.0,-1,-1,-1\n")
-                        # cv2.imsave(os.path.join(save_folder, "{:6d}.jpg".format(frame_id)), online_im)
-                    ch = cv2.waitKey(1)
-                    if ch == 27 or ch == ord("q") or ch == ord("Q"):
-                        break
+                 
                 else:
                     break
                 frame_id += 1
