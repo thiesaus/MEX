@@ -60,11 +60,15 @@ You can get all resources from: [MEX_Resource.zip](https://mega.nz/file/Im8nhAKa
         Refer-KITTI_labels.json
         textual_features.json
 ...
-- NeuralSORT/
-    0005/
-    0011/
-    0013/
+- track-dataset/
     gt_template/
+        0005/
+        0011/
+        0013/
+    NeuralSORT/
+        0005/
+        0011/
+        0013/
 ...
 - main.py
 ```
@@ -76,7 +80,7 @@ python main.py --mode=train --module_name=MEX
 
 ## Submit
 ```shell
-python main.py --mode=submit --module_name=MEX --module_checkpoint=./checkpoints/MEX/MEX_99.pth --track_root=./NeuralSORT
+python main.py --mode=submit --module_name=MEX --module_checkpoint=./checkpoints/MEX/MEX_99.pth --track_root=./track-dataset --track_name=NeuralSORT
 ```
 
 ## Run inferences with MeMOTR

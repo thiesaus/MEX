@@ -118,7 +118,7 @@ def submit(opt: dict):
     '========== Testing (Text-Guided {}) =========='
         .format('ON')
     )
-    output_path = join(opt["SUBMIT_SAVE_ROOT"],opt["MODULE_NAME"], f'results{opt["MODULE_NAME"]}.json')
+    output_path = join(opt["SUBMIT_SAVE_ROOT"],opt["MODULE_NAME"], f'results_{opt["MODULE_NAME"]}_{opt["TRACK_NAME"]}.json')
 
     if not exists(output_path):
 
@@ -129,7 +129,7 @@ def submit(opt: dict):
             open(output_path, 'w')
         )
 
-    SAVE_DIR = join(opt["SUBMIT_SAVE_ROOT"], opt["MODULE_NAME"], f'results{opt["MODULE_NAME"]}')
+    SAVE_DIR = join(opt["SUBMIT_SAVE_ROOT"], opt["MODULE_NAME"], f'results_{opt["MODULE_NAME"]}_{opt["TRACK_NAME"]}')
     CLS_DICT = json.load(open(output_path))
 
     if True:
@@ -145,6 +145,6 @@ def submit(opt: dict):
     generate_final_results(
         cls_dict=CLS_DICT,
         template_dir=os.path.join(opt["TRACK_ROOT"], "gt_template"),
-        track_dir=opt["TRACK_ROOT"],
+        track_dir=os.path.join(opt["TRACK_ROOT"],opt["TRACK_NAME"]),
         save_dir=SAVE_DIR,
     )
