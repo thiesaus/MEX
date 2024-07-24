@@ -86,6 +86,8 @@ class RuntimeTracker:
            # ================== INTER MODEL ==================
             old_images=tracks[-1].first_images
             _probs,crop_image= inter_module.predict(caption=caption, temp_img=temp_img, new_bbox=new_tracks.boxes,width=width,height=height,old_images=old_images)
+            if len(_probs)==0:
+                _probs=torch.Tensor([]).to(new_tracks.logits.device)
             mask=_probs>=threshold
             new_image_len=len(new_tracks.boxes)
             previous_image_len=len(tracks[-1].boxes)

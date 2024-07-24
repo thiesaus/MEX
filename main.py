@@ -4,6 +4,7 @@ from model.utils.utils import update_config
 from train_engine import train
 from submit_engine import submit
 from inference_engine import inference
+from inference_submit_engine import submit_inference
 import argparse 
 
 
@@ -16,7 +17,7 @@ def parse_option():
     parser = argparse.ArgumentParser("Network training and evaluation script.", add_help=True)
 
     # Running mode, Training? Evaluation? or ?
-    parser.add_argument("--mode", type=str, help="Running mode. train/submit/inf")
+    parser.add_argument("--mode", type=str, help="Running mode. train/submit/inf/submitinf")
 
     # Yaml Config Path:
     parser.add_argument("--config_module", type=str, help="Module config file path.",default="./configs/mex.yaml")
@@ -63,7 +64,8 @@ def parse_option():
     parser.add_argument("--memotr_checkpoint", type=str, help="Memotr checkpoint path.",default="./checkpoints/MeMOTR/memotr_bdd100k.pth")
     parser.add_argument("--inference_save_root", type=str, help="Inference save root",default="./inference_outputs")
     parser.add_argument("--module_threshold", type=float, help="Module threshold",default=0.)
-
+    parser.add_argument("--video_src", type=str, help="Video src for submit inference",default="D:/Thesis/DamnShit/Hello/MeMOTR_IKUN/models/mines")
+    parser.add_argument("--tracker_threshold", type=float, help="Tracker threshold",default=0.2)
  
     return parser.parse_args()
 
@@ -80,3 +82,6 @@ if __name__ == "__main__":
         submit(config)
     elif config["MODE"] == "inf":
         inference(config)
+    elif config["MODE"] == "submitinf":
+        submit_inference(config)
+

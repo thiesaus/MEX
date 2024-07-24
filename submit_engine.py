@@ -46,6 +46,7 @@ def test_tracking(model, dataloader):
                 for frame_id in range(data['start_frame'][idx], data['stop_frame'][idx] + 1):
                     frame_dict = OUTPUTS[data['video'][idx]][int(data['obj_id'][idx])][int(frame_id)]
                     frame_dict[data['expression_raw'][idx]].append(similarity[idx].cpu().numpy().tolist())
+        
     return OUTPUTS
 
 

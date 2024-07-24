@@ -2,7 +2,6 @@
 import cv2
 import torchvision.transforms.functional as F
 import torch
-import yaml
 import numpy as np
 from model.MeMOTR.structures.track_instances import TrackInstances
 import time
@@ -142,8 +141,7 @@ def demo_processing(
     print("Total frames: ", total_frames)
     assert total_frames > 0, "Video is empty."
     print((int(width), int(height)))
-    result_score_thresh = 0.5
-
+    tracker_threshold = config["TRACKER_THRESHOLD"]
     timer = Timer()
     frame_id = 0
 
@@ -209,7 +207,7 @@ def demo_processing(
                 # box = [x, y, w, h]
                 tracks_result.area = tracks_result.boxes[:, 2] * ori_w * \
                                      tracks_result.boxes[:, 3] * ori_h
-                tracks_result = filter_by_score(tracks_result, thresh=result_score_thresh)
+                tracks_result = filter_by_score(tracks_result, thresh=tracker_threshold)
                 tracks_result = filter_by_area(tracks_result)
                 # to xyxy:
                 tracks_result.boxes = box_cxcywh_to_xyxy(tracks_result.boxes)
