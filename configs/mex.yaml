@@ -1,0 +1,119 @@
+# @Author       : Ruopeng Gao
+# @Description  : Config for training DanceTrack.
+
+GIT_VERSION:
+MODE: train
+CONFIG_PATH:
+VISUALIZE: False
+AVAILABLE_GPUS: 0,1,2,3,4,5,6,7
+DEVICE: cuda
+USE_DISTRIBUTED: False
+USE_CHECKPOINT: False
+CHECKPOINT_LEVEL: 2               # gradient checkpoint level.
+                                  # As the number increases (from 1 to 4), the memory cost increases.
+                                  # We have deleted many comments in this official code simplicity,
+                                  # if you have any questions, feel free to contact with the author.
+RESUME:
+RESUME_SCHEDULER: True
+MULTI_CHECKPOINT: False
+
+
+# About data processing
+DATA_ROOT:
+DATA_PATH:
+NUM_WORKERS: 4
+BATCH_SIZE: 1
+ACCUMULATION_STEPS: 1
+
+# About model
+BACKBONE: resnet50
+HIDDEN_DIM: 256
+FFN_DIM: 2048
+NUM_FEATURE_LEVELS: 4
+NUM_HEADS: 8
+NUM_ENC_POINTS: 4
+NUM_DEC_POINTS: 4
+NUM_ENC_LAYERS: 6
+NUM_DEC_LAYERS: 6
+MERGE_DET_TRACK_LAYER: 1
+ACTIVATION: ReLU
+RETURN_INTER_DEC: True
+EXTRA_TRACK_ATTN: False
+AUX_LOSS: True
+USE_DAB: True
+UPDATE_THRESH: 0.5
+IKUN_THRESH: 0.5
+LONG_MEMORY_LAMBDA: 0.01
+# Pretrain model
+PRETRAINED_MODEL: dab_deformable_detr.pth
+
+# Sampling setting
+SAMPLE_STEPS: [60, 100]
+SAMPLE_LENGTHS: [1,1,1]
+SAMPLE_MODES: [random_interval]
+SAMPLE_INTERVALS: [10]
+SAMPLE_MOT17_JOIN: 0
+
+# Training setting
+SEED: 1000
+EPOCHS: 130
+ONLY_TRAIN_QUERY_UPDATER_AFTER: 130
+DROPOUT: 0.0
+NUM_DET_QUERIES: 300
+# training augmentation
+TP_DROP_RATE: 0.0
+FP_INSERT_RATE: 0.0
+LR: 1.0e-5
+LR_BACKBONE: 1.0e-5
+LR_POINTS: 1.0e-5
+WEIGHT_DECAY: 1.0e-5
+CLIP_MAX_NORM: 0.1
+LR_SCHEDULER: MultiStep
+LR_DROP_RATE: 0.1
+LR_DROP_MILESTONES: [120]
+# DETR matcher
+MATCH_COST_CLASS: 2
+MATCH_COST_BBOX: 5
+MATCH_COST_GIOU: 2
+# DETR loss
+LOSS_WEIGHT_FOCAL: 2
+LOSS_WEIGHT_L1: 5
+LOSS_WEIGHT_GIOU: 2
+# Aux Loss Weight
+AUX_LOSS_WEIGHT: [1.0, 1.0, 1.0, 1.0, 1.0]
+FREEZE_MEMOTR: true
+TG_EPOCH: 0
+TRUNCATION: 20
+FEATURE_DIM: 1024
+CLIP_MODEL: RN50
+KUM_MODE: cascade attention
+IMG_HW:
+NORM_MEAN:
+NORM_STD:
+RANDOM_CROP_RATIO:
+OUTPUTS_DIR: ./outputs
+GET_DATA_SUBSET: false
+SUBSET_LENGTH: 0
+NO_TRANSFORM: False
+CLIP_CHECKPOINT_DIR:
+CONFIG_MODULE:
+TRAIN_BS:
+TEST_BS:
+SAMPLE_EXPRESSION_NUM: 
+SAMPLE_FRAME_STRIDE:
+TRACK_ROOT:
+MODULE_NAME:
+SAMPLE_FRAME_LEN:
+SAMPLE_FRAME_NUM:
+EPOCHS_PER_EVAL:
+EPOCHS_PER_CHECKPOINT:
+MODULE_CHECKPOINT:
+SUBMIT_SAVE_ROOT:
+
+#inferences
+VIDEO_PATH:
+MEMOTR_CHECKPOINT:
+MEMOTR_CONFIG:
+CAPTION:
+INFERENCE_SAVE_ROOT:
+MODULE_THRESHOLD:
