@@ -90,3 +90,11 @@ python main.py --mode=inf --module_name=MEX --module_checkpoint=./checkpoints/ME
 ```shell
 python main.py --mode=inf --module_name=IKUN --module_checkpoint=./checkpoints/IKUN/iKUN_cascade_attention.pth --memotr_config=./configs/memotr_bdd100k.yaml --memotr_checkpoint=./checkpoints/MeMOTR/memotr_bdd100k.pth --video_path=<mp4_video_path> --caption=people-waking-on-the-street --module_threshold=0
 ```
+
+
+## Acknowledgment
+
+- [Deformable DETR](https://github.com/fundamentalvision/Deformable-DETR)
+- [TrackEval](https://github.com/JonathonLuiten/TrackEval)
+- [MeMOTR](https://github.com/MCG-NJU/MeMOTR/tree/main)
+- [iKUN](https://github.com/dyhBUPT/iKUN)
