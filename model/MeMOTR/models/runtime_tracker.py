@@ -98,7 +98,8 @@ class RuntimeTracker:
             probs = _probs.tolist()
             # print("true_objects : "+ str(sum(mask) ))
             latency=0
-            new_tracks.setFirstImage(crop_image,probs[:new_image_len])
+            if self.with_mem:
+                new_tracks.setFirstImage(crop_image,probs[:new_image_len])
             for i in range(new_image_len):
                 if mask[i] == False:
                     new_tracks.removePosition(i-latency)
