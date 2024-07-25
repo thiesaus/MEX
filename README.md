@@ -97,7 +97,7 @@ python main.py --mode=inf --module_name=IKUN --module_checkpoint=./checkpoints/I
 
 ## Run submit with MeMOTR
 ```shell
-python main.py --mode=submitinf --module_name=MEX --module_checkpoint=./checkpoints/MEX/MEX_99.pth --memotr_config=./configs/memotr_bdd100k.yaml --memotr_checkpoint=./checkpoints/MeMOTR/memotr_bdd100k.pth --video_src=D:/Thesis/DamnShit/Hello/MeMOTR_IKUN/models/mines --module_threshold=0 --tracker_threshold=0.2
+python main.py --mode=submitinf --module_name=MEX --module_checkpoint=./checkpoints/MEX/MEX_99.pth --memotr_config=./configs/memotr_bdd100k.yaml --memotr_checkpoint=./checkpoints/MeMOTR/memotr_bdd100k.pth --video_src=D:/Thesis/DamnShit/Hello/MeMOTR_IKUN/models/mines --module_threshold=0 --tracker_threshold=0.2 --inf_w_mem=True
 ```
 
 ## Acknowledgment
