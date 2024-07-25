@@ -13,7 +13,7 @@ class RuntimeTracker:
     def __init__(self, det_score_thresh: float = 0.7, track_score_thresh: float = 0.6,
                  miss_tolerance: int = 5,
                  use_motion: bool = False, motion_min_length: int = 3, motion_max_length: int = 5,
-                 visualize: bool = False, use_dab: bool = True):
+                 visualize: bool = False, use_dab: bool = True,with_mem:bool=True):
         self.det_score_thresh = det_score_thresh
         self.track_score_thresh = track_score_thresh
         self.miss_tolerance = miss_tolerance
@@ -24,6 +24,7 @@ class RuntimeTracker:
         self.motion_max_length = motion_max_length
         self.motions: Dict[Motion] = {}
         self.use_dab = use_dab
+        self.with_mem=with_mem
 
     def update(self, model_outputs: dict, tracks: List[TrackInstances],
                temp_img=None,inter_module=None,caption="",
@@ -84,7 +85,10 @@ class RuntimeTracker:
         ids = []
         if inter_module is not None:
            # ================== INTER MODEL ==================
-            old_images=tracks[-1].first_images
+            if self.with_mem:
+                old_images=tracks[-1].first_images
+            else:
+                old_images=[]
             _probs,crop_image= inter_module.predict(caption=caption, temp_img=temp_img, new_bbox=new_tracks.boxes,width=width,height=height,old_images=old_images)
             if len(_probs)==0:
                 _probs=torch.Tensor([]).to(new_tracks.logits.device)

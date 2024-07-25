@@ -168,6 +168,7 @@ class SUBMIT_INFERENCE:
             motion_max_length=0,
             visualize=False, 
             use_dab=self.config["USE_DAB"],
+            with_mem=self.config["INF_W_MEM"],
         )
         with torch.no_grad():
             while frame_id <total_frames:
@@ -211,7 +212,7 @@ class SUBMIT_INFERENCE:
                         online_tlwhs.append([x1, y1, w, h])
                         online_ids.append(tracks_result.ids[i].item())
                         with open(predict_path, "a") as f:
-                            f.write(f"{frame_id},{tracks_result.ids[i].item()},{x1},{y1},{w},{h},1.0,-1,-1,-1\n")
+                            f.write(f"{frame_id+1},{tracks_result.ids[i].item()},{x1},{y1},{w},{h},1.0,-1,-1,-1\n")
                  
                 else:
                     break

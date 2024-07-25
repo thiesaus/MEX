@@ -159,6 +159,7 @@ def demo_processing(
         motion_max_length=0,
         visualize=False, 
         use_dab=config["USE_DAB"],
+        with_mem=config["INF_W_MEM"]
     )
     inter_module=INTERGRATE_MODULE(device=model.module.device, model=model.module,config=config)
     print("Caption " + caption)
