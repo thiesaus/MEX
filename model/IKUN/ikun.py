@@ -540,3 +540,18 @@ class IKUN(nn.Module):
                 nn.ReLU(),
                 nn.Linear(self.text_dim, self.config["FEATURE_DIM"]),
             )
+def build_IKUN(config):
+    ckpt_path= config["MODULE_CHECKPOINT"]
+    model= IKUN(config=config)
+    model_name='model'
+    print(f'load from {ckpt_path}...')
+    ckpt = torch.load(ckpt_path)
+
+    temp=model.state_dict()
+    pretrained_keys = list(ckpt[model_name].keys())
+    for key in pretrained_keys:
+        if "module.clip.visual.attnpool" in key:
+            continue
+        temp[key.replace('module.', '')] = ckpt[model_name][key]
+    model.load_state_dict(temp)
+    return model

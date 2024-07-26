@@ -12,6 +12,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from utils.similarity_calibration import similarity_calibration
+from model.IKUN.ikun import IKUN,build_IKUN
 
 def dd():
     return defaultdict(list)
@@ -111,9 +112,13 @@ def generate_final_results(cls_dict, template_dir, track_dir, save_dir, thr_scor
                                 f.write(','.join(list(map(str, bbox))) + '\n')
 
 def submit(opt: dict):
-    model = build_MEX(config=opt).cuda()
-    load_state = torch.load(opt["MODULE_CHECKPOINT"], map_location="cpu")
-    model.load_state_dict(load_state["model"])
+    print('========== Submitting ==========',opt["MODULE_NAME"])
+    if opt["MODULE_NAME"] == "IKUN":
+        model = build_IKUN(config=opt).cuda()
+    elif opt["MODULE_NAME"] == "MEX":
+        model = build_MEX(config=opt).cuda()
+        load_state = torch.load(opt["MODULE_CHECKPOINT"], map_location="cpu")
+        model.load_state_dict(load_state["model"])
     dataloader = get_dataloader('test', opt, 'Track_Dataset')
     print(
     '========== Testing (Text-Guided {}) =========='
