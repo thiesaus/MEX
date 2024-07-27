@@ -102,7 +102,7 @@ class RuntimeTracker:
                 new_tracks.setFirstImage(crop_image,probs[:new_image_len])
             for i in range(new_image_len):
                 if mask[i] == False:
-                    new_tracks[-1].ids[i-latency] = -1
+                    new_tracks.removePosition(i-latency)
                     latency+=1
             latency=0
             tracks[-1].setProbs(probs[new_image_len:])
