@@ -30,19 +30,28 @@ FRAMES = {
 }  # 视频起止帧
 
 
-def test_tracking(model, dataloader):
+def test_tracking(model, dataloader,config):
     print('========== Testing Tracking ==========')
     model.eval()
     OUTPUTS = multi_dim_dict(4, list)
     with torch.no_grad():
         for batch_idx, data in enumerate(tqdm(dataloader)):
             # forward
-            inputs = dict(
-                local_images=data['cropped_images'].cuda(),
-                global_image=data['global_images'].cuda(),
-                sentences=data['expression_new'],
-            )
-            similarity = model(inputs)['scores'].cpu()
+            if config["MODULE_NAME"] == "IKUN":
+                inputs = dict(
+                    local_images=data['cropped_images'].cuda(),
+                    global_image=data['global_images'].cuda(),
+                    sentences=data['expression_new'],
+                )
+                similarity = model(data['cropped_images'].cuda(),)['logits'].cpu()
+            else:
+                inputs = dict(
+                    local_images=data['cropped_images'].cuda(),
+                    global_image=data['global_images'].cuda(),
+                    sentences=data['expression_new'],
+                )
+            
+                similarity = model(inputs)['scores'].cpu()
             for idx in range(len(data['video'])):
                 for frame_id in range(data['start_frame'][idx], data['stop_frame'][idx] + 1):
                     frame_dict = OUTPUTS[data['video'][idx]][int(data['obj_id'][idx])][int(frame_id)]
@@ -128,7 +137,7 @@ def submit(opt: dict):
 
     if not exists(output_path):
 
-        output = test_tracking(model, dataloader)
+        output = test_tracking(model, dataloader,opt)
         os.makedirs(join(opt["SUBMIT_SAVE_ROOT"], opt["MODULE_NAME"]), exist_ok=True)
         json.dump(
             output,
