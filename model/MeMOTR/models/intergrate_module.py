@@ -40,16 +40,15 @@ def get_transform(mode, idx):
     
 transform = {idx: get_transform("test", idx) for idx in (0, 1, 2)}
 
-def preprocess_image(model, images,global_image, caption):
+def preprocess_image(model, images,global_images, caption):
     processed_local_image = torch.stack(
                 [transform[0](
                     image
                 ) for image in images],
                 dim=0,
             )
-    processed_global_image =transform[2](global_image)
     processed_global_image = torch.stack(
-        [processed_global_image for _ in range(len(images))],
+        [transform[2](img) for img in global_images],
         dim=0,
     )
     caption= caption
@@ -87,21 +86,22 @@ class INTERGRATE_MODULE():
         self.is_IKUN=False
         if config["MODULE_NAME"] == "IKUN":
             self.is_IKUN=True
-    def predict(self, caption, new_bbox,width,height,temp_img,old_images=[]):
+    def predict(self, caption, new_bbox,width,height,temp_img,old_images=[],old_global_images=[]):
         boxes = box_cxcywh_to_xyxy(new_bbox)
         boxes = (boxes * torch.as_tensor([width,height, width, height], dtype=torch.float).to(boxes.device))
         
 
         crop_image=cut_image_from_bbox(temp_img,boxes)
         crop_image2=crop_image+ old_images
+        global_images= [temp_img for _ in range(len(crop_image)) ] + old_global_images
         # print("local-image new: {}, old: {}".format(len(crop_image),len(old_images)))
 
         masks = []
         if len(crop_image2)>0:
             if self.is_IKUN:
-                probs = self.model(crop_image2,temp_img, caption)
+                probs = self.model(crop_image2,global_images, caption)
             else:
-                probs = preprocess_image(self.model, crop_image2,temp_img, caption)
+                probs = preprocess_image(self.model, crop_image2,global_images, caption)
           
             masks = probs
         return masks,crop_image

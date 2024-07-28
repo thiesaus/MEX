@@ -87,9 +87,11 @@ class RuntimeTracker:
            # ================== INTER MODEL ==================
             if self.with_mem:
                 old_images=tracks[-1].first_images
+                global_images=tracks[-1].first_global_images
             else:
                 old_images=[]
-            _probs,crop_image= inter_module.predict(caption=caption, temp_img=temp_img, new_bbox=new_tracks.boxes,width=width,height=height,old_images=old_images)
+                global_images=[]
+            _probs,crop_image= inter_module.predict(caption=caption, temp_img=temp_img, new_bbox=new_tracks.boxes,width=width,height=height,old_images=old_images,old_global_images=global_images)
             if len(_probs)==0:
                 _probs=torch.Tensor([]).to(new_tracks.logits.device)
             mask=_probs>=threshold
@@ -100,6 +102,7 @@ class RuntimeTracker:
             latency=0
             if self.with_mem:
                 new_tracks.setFirstImage(crop_image,probs[:new_image_len])
+                new_tracks.setFirstGlobalImage([temp_img] * new_image_len)
             for i in range(new_image_len):
                 if mask[i] == False:
                     new_tracks.removePosition(i-latency)
@@ -108,7 +111,7 @@ class RuntimeTracker:
             tracks[-1].setProbs(probs[new_image_len:])
             for i in range(previous_image_len):
                 if mask[i+new_image_len] == False:
-                    tracks[-1].ids[i-latency] = -1
+                    tracks[-1].removePosition(i-latency)
                     latency+=1
         # =================================================
         for i in range(len(new_tracks)):

@@ -37,6 +37,7 @@ class TrackInstances:
         self.last_appear_boxes = torch.zeros((0, 4))
         self.probs = []
         self.first_images=[]
+        self.first_global_images=[]
 
     
     def removePosition(self, idx: int):
@@ -57,12 +58,16 @@ class TrackInstances:
         self.last_appear_boxes = torch.cat((self.last_appear_boxes[:idx], self.last_appear_boxes[idx + 1:]))
         self.probs.pop(idx)
         self.first_images.pop(idx)
+        self.first_global_images.pop(idx)
     def setFirstImage(self,first_images,probs):
         self.first_images=first_images
         self.probs=probs
     def setProbs(self,probs):
         self.probs=probs
 
+    def setFirstGlobalImage(self,first_global_images):
+        self.first_global_images=first_global_images
+        
     def to(self, device):
         res = TrackInstances(frame_height=self.frame_height, frame_width=self.frame_width,
                              hidden_dim=self.hidden_dim, num_classes=self.num_classes)
@@ -85,7 +90,7 @@ class TrackInstances:
         res = TrackInstances(frame_height=self.frame_height, frame_width=self.frame_width,
                              hidden_dim=self.hidden_dim, num_classes=self.num_classes)
         for k, v in vars(self).items():
-            if k == "first_images" or k == "probs":
+            if k == "first_images" or k == "probs" or k == "first_global_images":
                 result=[]
                 for i in range(len(item)):
                     flag = item[i].item() if type(item) == torch.Tensor else item[i]

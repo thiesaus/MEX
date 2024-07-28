@@ -361,13 +361,13 @@ class IKUN(nn.Module):
                 if p.dim() > 1:
                     nn.init.xavier_uniform_(p)
 
-    def forward(self,images,global_image, caption, epoch=1e5):
+    def forward(self,images,global_images, caption, epoch=1e5):
         
         output = dict()
         exp =  tokenize(caption).cuda()
         global_images = torch.stack([
-            self.transform[2](global_image)
-            for _ in range(len(images))
+            self.transform[2](img)
+            for img in global_images
         ], dim=0).cuda()
         local_images = torch.stack(
             [self.transform[0](
