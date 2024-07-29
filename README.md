@@ -25,6 +25,14 @@ python setup.py build install # for windows
 python test.py
 ```
 
+## Instalation for Trackeval
+```shell
+# From https://github.com/fundamentalvision/Deformable-DETR
+cd ./TrackEval
+pip install -r minimum_requirements.txt
+pip install pycocotools scipy
+```
+
 
 
 
@@ -87,7 +95,7 @@ python main.py --mode=submit --module_name=MEX --module_checkpoint=./checkpoints
 
 ### MEX
 ```shell
-python main.py --mode=inf --module_name=MEX --module_checkpoint=./checkpoints/MEX/MEX_99.pth --memotr_config=./configs/memotr_bdd100k.yaml --memotr_checkpoint=./checkpoints/MeMOTR/memotr_bdd100k.pth --video_path=D:/Thesis/DamnShit/Hello/MeMOTR_IKUN/models/mines/0022.mp4 --caption=people-waking-on-the-street --module_threshold=0 --tracker_threshold=0.2
+python main.py --mode=inf --module_name=MEX --module_checkpoint=./checkpoints/MEX/MEX_99.pth --memotr_config=./configs/memotr_bdd100k.yaml --memotr_checkpoint=./checkpoints/MeMOTR/memotr_bdd100k.pth --video_path=<your_video> --caption=people-waking-on-the-street --module_threshold=0 --tracker_threshold=0.2
 ```
 
 ### IKUN
@@ -97,7 +105,28 @@ python main.py --mode=inf --module_name=IKUN --module_checkpoint=./checkpoints/I
 
 ## Run submit with MeMOTR
 ```shell
-python main.py --mode=submitinf --module_name=MEX --module_checkpoint=./checkpoints/MEX/MEX_99.pth --memotr_config=./configs/memotr_bdd100k.yaml --memotr_checkpoint=./checkpoints/MeMOTR/memotr_bdd100k.pth --video_src=D:/Thesis/DamnShit/Hello/MeMOTR_IKUN/models/mines --module_threshold=0 --tracker_threshold=0.2 --inf_w_mem=True
+python main.py --mode=submitinf --module_name=MEX --module_checkpoint=./checkpoints/MEX/MEX_99.pth --memotr_config=./configs/memotr_bdd100k.yaml --memotr_checkpoint=./checkpoints/MeMOTR/memotr_bdd100k.pth --video_src=<your_folder_video_source> --module_threshold=0 --tracker_threshold=0.2 --inf_w_mem=True
+```
+
+## Run eval HOTA 
+
+Noted to run  `submit` or `submitinf` command to generate submit folder, and feed to `<submit output folder>`
+
+```shell
+cd ./TrackEval/scripts
+
+python run_mot_challenge.py \
+--METRICS HOTA CLEAR Identity \
+--SEQMAP_FILE ../seqmap.txt \
+--SKIP_SPLIT_FOL True \
+--GT_FOLDER ./../../data_dir/Refer_Kitti/KITTI/training/image_02 \
+--TRACKERS_FOLDER ./../../track-dataset/gt_template \
+--GT_LOC_FORMAT {gt_folder}{video_id}/{expression_id}/gt.txt \
+--TRACKERS_TO_EVAL <submit output folder> \
+--USE_PARALLEL True \
+--NUM_PARALLEL_CORES 2 \
+--PLOT_CURVES False \
+
 ```
 
 ## Acknowledgment
