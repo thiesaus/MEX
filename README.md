@@ -1,5 +1,6 @@
 # MEX: Memory-efficient Approach to Referring Multi-Object Tracking
 
+> We introduce a novel approach to the referring module in the tracking-then-referring pipeline, solving the Referring Multi-Object Tracking task, dubbed Memory-Efficient Cross(X)-Modality (MEX)
 
 ## Requirements
 ```bash
@@ -125,8 +126,7 @@ python run_mot_challenge.py \
 --TRACKERS_TO_EVAL <submit output folder> \
 --USE_PARALLEL True \
 --NUM_PARALLEL_CORES 2 \
---PLOT_CURVES False \
-
+--PLOT_CURVES False 
 ```
 
 ## Acknowledgment
