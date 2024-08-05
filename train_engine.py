@@ -54,7 +54,7 @@ def train(config: dict):
     optimizer = AdamW(params=param_groups, lr=config["LR"], weight_decay=config["WEIGHT_DECAY"])
 
     # Wandb
-    if config["WANDB"]:
+    if config["WANDB"] == True:
         wandb.init(
         project="module_space", 
         config={
@@ -144,7 +144,7 @@ def train(config: dict):
             p,r=test_one_epoch(model=model,dataloader_test=dataloader_test,epoch=epoch)
             f1_score = 2 * p * r / (p + r + 1e-6)
             output_dict["test"]=dict(epoch=epoch,precision=p,recall=r,f1_score=f1_score)
-        if config["WANDB"]:
+        if config["WANDB"] == True:
             wandb.log(output_dict)
         scheduler.step()
 
@@ -160,7 +160,7 @@ def train(config: dict):
                     optimizer=optimizer,
                     scheduler=scheduler
                 )
-    if config["WANDB"]:
+    if config["WANDB"] == True:
         wandb.finish()
     return
 

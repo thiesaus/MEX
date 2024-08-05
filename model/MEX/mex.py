@@ -213,8 +213,8 @@ class FusionAttention(nn.Module):
 
     def forward(self,global_feat,local_feat,text_feat,batch_first=False):
         '''
-        global_feat: [Batch_size x Seq_length x Hidden_size]
-        local_feat: [Batch_size x Seq_length x Hidden_size]
+        global_feat: [Batch_size x  area  x Hidden_size]
+        local_feat: [Batch_size x area x Hidden_size]
         text_feat: [Batch_size x Seq_length x Hidden_size] 
         '''
         if batch_first == False:
@@ -308,6 +308,7 @@ class MEX(nn.Module):
         self.num_heads = 4
         self.dropout = 0.1
         self.config=config
+        self.is_clip = config["IMG_ENCODER"] == 'clip'
         if config["IMG_ENCODER"] !='clip':
             self.image_processor = AutoImageProcessor.from_pretrained("microsoft/swinv2-tiny-patch4-window8-256")
             self.swinv2_model =Swinv2Model.from_pretrained("microsoft/swinv2-tiny-patch4-window8-256").to(self.device)
@@ -332,26 +333,40 @@ class MEX(nn.Module):
         #reprocess text
         self.feature_dim=256
         self.img_dim = 256
+        if config['IMG_ENCODER'] == 'clip':
+            self.img_dim = 2048
+            self.feature_dim = 1024
         self.text_dim = 1024
-        self.img_fc = self.get_img_fc(use_ln=False).to(self.device)
+        if self.is_clip:
+            self.img_fc_local = self.get_img_fc(use_ln=False).to(self.device)
+            self.img_fc_global = self.get_img_fc(use_ln=False).to(self.device)
+        else:
+            self.img_fc= self.get_img_fc(use_ln=False).to(self.device)
         self.text_fc = self.get_text_fc(use_ln=True).to(self.device)
         self.seq_length=config['TRUNCATION']
        
-        
-        local_reso = 4 * 4
-        local_scale = local_reso ** -0.5
-        self.pos_emb_local = nn.Parameter(local_scale * randn(local_reso))
-        global_reso = 4 * 4
-        global_scale = global_reso ** -0.5
-        self.pos_emb_global = nn.Parameter(global_scale * randn(global_reso))
+        if config["IMG_ENCODER"] != 'clip':
+            local_reso = 4 * 4
+            local_scale = local_reso ** -0.5
+            self.pos_emb_local = nn.Parameter(local_scale * randn(local_reso))
+            global_reso = 4 * 4
+            global_scale = global_reso ** -0.5
+            self.pos_emb_global = nn.Parameter(global_scale * randn(global_reso))
+        else:
+            local_reso = 7 * 7
+            local_scale = local_reso ** -0.5
+            self.pos_emb_local = nn.Parameter(local_scale * randn(local_reso))
+            global_reso = 21 * 21
+            global_scale = global_reso ** -0.5
+            self.pos_emb_global = nn.Parameter(global_scale * randn(global_reso))
 
         self.fusion_fc = nn.Linear(self.text_dim, self.img_dim,device=self.device)
         self.fusion_ffn = FFN(self.img_dim, 0.1)
 
-        self.global_attn_ = nn.MultiheadAttention(self.feature_dim, self.num_heads, dropout=self.dropout,device=self.device)
-        self.global_add_norm_ = AddNorm(self.feature_dim, dropout=self.dropout,device=self.device)
-        self.local_attn_ = nn.MultiheadAttention(self.feature_dim, self.num_heads, dropout=self.dropout,device=self.device)
-        self.local_add_norm_ = AddNorm(self.feature_dim, dropout=self.dropout,device=self.device)
+        self.global_attn_ = nn.MultiheadAttention(self.img_dim, self.num_heads, dropout=self.dropout,device=self.device)
+        self.global_add_norm_ = AddNorm(self.img_dim, dropout=self.dropout,device=self.device)
+        self.local_attn_ = nn.MultiheadAttention(self.img_dim, self.num_heads, dropout=self.dropout,device=self.device)
+        self.local_add_norm_ = AddNorm(self.img_dim, dropout=self.dropout,device=self.device)
         self.text_attn_ = TextSelfAttentionBlock(self.feature_dim,self.seq_length, self.num_heads,device=self.device, dropout=self.dropout)
 
         self.weird_attn = FusionAttention(self.feature_dim, self.num_heads,device=self.device, dropout=self.dropout)
@@ -386,6 +401,7 @@ class MEX(nn.Module):
         local_img = rearrange(local_img, 'b t c h w -> (b t) c h w')
         if self.config["IMG_ENCODER"] == 'clip':
             local_feat = self.clip_image_encoder(local_img)
+            # local_feat = torch.rand(b*t, 2048, 7, 7)
         else:
             local_feat =  self.process_image(local_img);  # [bt,c,7,7]
               
@@ -416,9 +432,11 @@ class MEX(nn.Module):
         # self attention
         y1,_= self.global_attn_(global_feat,global_feat,global_feat)
         y1 = self.global_add_norm_(y1,global_feat)
+        y1= self.img_fc_global(y1)
 
         y2,_= self.local_attn_(local_feat,local_feat,local_feat)
         y2 = self.local_add_norm_(y2,local_feat)
+        y2= self.img_fc_local(y2)
 
         y3= self.text_attn_(text_feat)
         return y1,y2,y3
@@ -452,12 +470,14 @@ class MEX(nn.Module):
         text_feat = text_feat.unsqueeze(1)  # [b,l,c]->[b,1,l,c]
         text_feat = text_feat.repeat([1, n, 1, 1])
         text_feat = rearrange(text_feat, 'b t l c -> (b t) l c')
-        text_feat = self.fusion_fc(text_feat)
+        if not self.is_clip:
+            text_feat = self.fusion_fc(text_feat)
 
         global_feat,local_feat,text_feat = self.self_attentions(global_feat,local_feat,text_feat)
 
         visual_feat = self.weird_attn(global_feat,local_feat,text_feat,batch_first=True) 
-        visual_feat = visual_feat * local_feat
+        if not self.is_clip:
+            visual_feat = visual_feat * local_feat
         vis_feat = rearrange(visual_feat, "bt l c -> bt c l")
         vis_feat = self.st_pooling(vis_feat, bs=b)
         if not self.training:
@@ -483,7 +503,8 @@ class MEX(nn.Module):
         feat = rearrange(feat, 'b c t -> b (t c)')
 
         # projection
-        feat = self.img_fc(feat)
+        if not self.is_clip:
+            feat = self.img_fc(feat)
         return feat
 
 

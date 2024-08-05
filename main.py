@@ -38,7 +38,7 @@ def parse_option():
     # model parameters
     parser.add_argument('--sample_expression_num', type=int, default=1)
     parser.add_argument('--sample_frame_stride', type=int, default=2)
-    parser.add_argument("--truncation", type=int, help="Truncation for the model.",default=20)
+    parser.add_argument("--truncation", type=int, help="Truncation for the model.",default=10)
     parser.add_argument("--sample_frame_len", type=int, help="Truncation for the model.",default=8)
     parser.add_argument("--sample_frame_num", type=int, help="Truncation for the model.",default=2)
 
@@ -71,7 +71,7 @@ def parse_option():
     #testing
     parser.add_argument('--img_encoder', type=str, default='swintv2', help='image encoder to swintv2 | clip ')
     parser.add_argument("--outputs_dir", type=str, help="Checkpoint output dir",default="./checkpoints")
-    parser.add_argument('--wandb', type=bool, default=False, help="Use wandb for logging")
+    parser.add_argument('--wandb', type=bool, help="Use wandb for logging", default=False)
 
  
     return parser.parse_args()
