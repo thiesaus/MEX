@@ -307,9 +307,15 @@ class MEX(nn.Module):
         self.device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.num_heads = 4
         self.dropout = 0.1
-        self.image_processor = AutoImageProcessor.from_pretrained("microsoft/swinv2-tiny-patch4-window8-256")
-        self.swinv2_model =Swinv2Model.from_pretrained("microsoft/swinv2-tiny-patch4-window8-256").to(self.device)
         self.config=config
+        if config["IMG_ENCODER"] !='clip':
+            self.image_processor = AutoImageProcessor.from_pretrained("microsoft/swinv2-tiny-patch4-window8-256")
+            self.swinv2_model =Swinv2Model.from_pretrained("microsoft/swinv2-tiny-patch4-window8-256").to(self.device)
+            self._free_swin()
+            self.cnn_image_local=nn.Sequential(*[make_layers(768, 512, 2,device=self.device, is_downsample=False),
+                                        make_layers(512, 256, 2,device=self.device, is_downsample=True)])
+            self.cnn_image_global=nn.Sequential(*[make_layers(768, 512, 2, device=self.device,is_downsample=False),
+                                        make_layers(512, 256, 2,device=self.device, is_downsample=True)])
 
         self.clip = load_clip(
             os.path.join(config["CLIP_CHECKPOINT_DIR"], "RN50.pt"),
@@ -319,14 +325,10 @@ class MEX(nn.Module):
         self.clip = self.clip.float()
 
         self.clip.visual.attnpool = Id().to(self.device)
-        self._freeze_text_encoder()
         self._freeze_clip()
            #reprocess image
 
-        self.cnn_image_local=nn.Sequential(*[make_layers(768, 512, 2,device=self.device, is_downsample=False),
-                                        make_layers(512, 256, 2,device=self.device, is_downsample=True)])
-        self.cnn_image_global=nn.Sequential(*[make_layers(768, 512, 2, device=self.device,is_downsample=False),
-                                        make_layers(512, 256, 2,device=self.device, is_downsample=True)])
+
         #reprocess text
         self.feature_dim=256
         self.img_dim = 256
@@ -367,7 +369,7 @@ class MEX(nn.Module):
         mask.triu_(1)  # zero out the lower diagonal
         return mask
 
-    def _freeze_text_encoder(self):
+    def _free_swin(self):
         """
         These parameters are not frozen:
         - list(self.clip.token_embedding.parameters())
@@ -382,17 +384,23 @@ class MEX(nn.Module):
     def encode_images(self,local_img,global_img):
         b, t = global_img.size()[:2]
         local_img = rearrange(local_img, 'b t c h w -> (b t) c h w')
-        local_feat =  self.process_image(local_img);  # [bt,c,7,7]
+        if self.config["IMG_ENCODER"] == 'clip':
+            local_feat = self.clip_image_encoder(local_img)
+        else:
+            local_feat =  self.process_image(local_img);  # [bt,c,7,7]
+              
+            # rearrange
+            local_feat = rearrange(local_feat, 'bt (h w) c -> bt c h w',h=8)
+            local_feat = self.cnn_image_local(local_feat)
       
         global_img = rearrange(global_img, 'B T C H W -> (B T) C H W')
-        global_feat =  self.process_image(global_img); 
-      
-        # rearrange
-        local_feat = rearrange(local_feat, 'bt (h w) c -> bt c h w',h=8)
-        local_feat = self.cnn_image_local(local_feat)
-
-        global_feat = rearrange(global_feat, 'BT (H W) C-> BT C H W',H=8)
-        global_feat = self.cnn_image_global(global_feat)
+        
+        if self.config["IMG_ENCODER"] == 'clip':
+            global_feat = self.clip_image_encoder(global_img)
+        else:
+            global_feat =  self.process_image(global_img); 
+            global_feat = rearrange(global_feat, 'BT (H W) C-> BT C H W',H=8)
+            global_feat = self.cnn_image_global(global_feat)
 
         local_feat = rearrange(local_feat, 'bt c h w -> bt c (h w)')
         global_feat = rearrange(global_feat, 'bt C H W -> bt C (H W)')
@@ -497,6 +505,11 @@ class MEX(nn.Module):
         # padded_temp = F.pad(temp, (0, 256, 0, 0, 0, 0), mode='constant', value=0)
         return temp
     
+    def clip_image_encoder(self, image):
+        local_feat = self.clip.visual(image)  # [bt,c,7,7]
+        
+        return local_feat
+
     def image_encoder(self, image): # [1,49,768]
         inputs = self.image_processor(image, return_tensors="pt",do_rescale=False).to(self.device)    
         outputs = self.swinv2_model(**inputs)

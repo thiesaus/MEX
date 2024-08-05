@@ -434,6 +434,7 @@ def get_dataloader(mode, opt, dataset='RMOT_Dataset', show=False, **kwargs):
     return dataloader
 
 
+
 def get_transform(mode, opt, idx):
     if mode == 'train':
         return T.Compose([
@@ -443,14 +444,14 @@ def get_transform(mode, opt, idx):
                 ratio=opt["RANDOM_CROP_RATIO"]
             ),
             T.ToTensor(),
-            # T.Normalize(opt["norm_mean"], opt["norm_std"]),
+            T.Normalize(opt["NORM_MEAN"], opt["NORM_STD"]),
         ])
     elif mode == 'test':
         return T.Compose([
             SquarePad(),
             T.Resize(opt["IMG_HW"][idx]),
             T.ToTensor(),
-            # T.Normalize(opt["norm_mean"], opt['norm_std']),
+            T.Normalize(opt["NORM_MEAN"], opt['NORM_STD']),
         ])
     elif mode == 'unnorm':
         mean = opt["NORM_MEAN"]
