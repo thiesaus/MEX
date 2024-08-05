@@ -13,6 +13,7 @@ pip install einops==0.7.0
 pip install ftfy regex tqdm
 pip install git+https://github.com/openai/CLIP.git 
 pip install opencv-python
+pip install wandb
 ```
 ## Instalation for MeMOTR
 ```shell

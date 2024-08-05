@@ -1,5 +1,6 @@
 import os
 import torch
+import wandb
 from logger import Logger,MetricLog
 from torch.optim import  AdamW
 from utils.utils import   distributed_rank, set_seed,distributed_world_size,is_main_process
@@ -51,6 +52,18 @@ def train(config: dict):
     # Optimizer
     param_groups, lr_names = get_param_groups(config=config, model=model)
     optimizer = AdamW(params=param_groups, lr=config["LR"], weight_decay=config["WEIGHT_DECAY"])
+
+    # Wandb
+    if config["WANDB"]:
+        wandb.init(
+        project="module_space", 
+        config={
+        "architecture": "Transformer",
+        "epochs": config["EPOCHS"],
+
+        })
+    
+
 
     # Scheduler
     if config["LR_SCHEDULER"] == "MultiStep":
@@ -131,7 +144,8 @@ def train(config: dict):
             p,r=test_one_epoch(model=model,dataloader_test=dataloader_test,epoch=epoch)
             f1_score = 2 * p * r / (p + r + 1e-6)
             output_dict["test"]=dict(epoch=epoch,precision=p,recall=r,f1_score=f1_score)
-
+        if config["WANDB"]:
+            wandb.log(output_dict)
         scheduler.step()
 
         train_states["start_epoch"] += 1
@@ -146,7 +160,8 @@ def train(config: dict):
                     optimizer=optimizer,
                     scheduler=scheduler
                 )
-
+    if config["WANDB"]:
+        wandb.finish()
     return
 
 def get_param_groups(config: dict, model: nn.Module) -> Tuple[List[Dict], List[str]]:

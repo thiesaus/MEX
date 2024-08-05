@@ -67,6 +67,12 @@ def parse_option():
     parser.add_argument("--video_src", type=str, help="Video src for submit inference",default="D:/Thesis/DamnShit/Hello/MeMOTR_IKUN/models/mines")
     parser.add_argument("--tracker_threshold", type=float, help="Tracker threshold",default=0.2)
     parser.add_argument("--inf_w_mem", type=bool, help="Run inference with mem",default=True)
+
+    #testing
+    parser.add_argument('--img_encoder', type=str, default='swintv2', help='image encoder to swintv2 | clip ')
+    parser.add_argument("--outputs_dir", type=str, help="Checkpoint output dir",default="./checkpoints")
+    parser.add_argument('--wandb', type=bool, default=False, help="Use wandb for logging")
+
  
     return parser.parse_args()
 
