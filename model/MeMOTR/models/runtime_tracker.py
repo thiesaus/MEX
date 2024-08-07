@@ -6,6 +6,7 @@ import torch
 from typing import List, Dict
 from .utils import logits_to_scores
 from .motion import Motion
+from PIL import Image 
 
 from model.MeMOTR.structures.track_instances import TrackInstances
 
@@ -13,7 +14,7 @@ class RuntimeTracker:
     def __init__(self, det_score_thresh: float = 0.7, track_score_thresh: float = 0.6,
                  miss_tolerance: int = 5,
                  use_motion: bool = False, motion_min_length: int = 3, motion_max_length: int = 5,
-                 visualize: bool = False, use_dab: bool = True,with_mem:bool=True):
+                 visualize: bool = False, use_dab: bool = True,with_mem:bool=True,inter_module=None,filter_type:str="active"):
         self.det_score_thresh = det_score_thresh
         self.track_score_thresh = track_score_thresh
         self.miss_tolerance = miss_tolerance
@@ -25,6 +26,49 @@ class RuntimeTracker:
         self.motions: Dict[Motion] = {}
         self.use_dab = use_dab
         self.with_mem=with_mem
+        self.inter_module=inter_module
+        self.filter_type=filter_type
+        
+
+    def active_filter(self,tracks:List[TrackInstances],new_tracks:List[TrackInstances],
+                      temp_img:Image,caption:str,threshold:float,width:int,height:int):
+        if self.with_mem:
+            old_images=tracks[-1].first_images
+        else:
+            old_images=[]
+        _probs,crop_image= self.inter_module.predict(caption=caption, temp_img=temp_img, new_bbox=new_tracks.boxes,width=width,height=height,old_images=old_images)
+        if len(_probs)==0:
+            _probs=torch.Tensor([]).to(new_tracks.logits.device)
+        mask=_probs>=threshold
+        new_image_len=len(new_tracks.boxes)
+        previous_image_len=len(tracks[-1].boxes)
+        probs = _probs.tolist()
+        # print("true_objects : "+ str(sum(mask) ))
+        latency=0
+        if self.with_mem:
+            new_tracks.setFirstImage(crop_image,probs[:new_image_len])
+        for i in range(new_image_len):
+            if mask[i] == False:
+                new_tracks.removePosition(i-latency)
+                latency+=1
+        latency=0
+        tracks[-1].setProbs(probs[new_image_len:])
+        for i in range(previous_image_len):
+            if mask[i+new_image_len] == False:
+                tracks[-1].removePosition(i-latency)
+                latency+=1
+        return new_tracks,tracks
+    
+    def post_process_filter(self,tracks:List[TrackInstances],  temp_img:Image,caption:str,threshold:float,width:int,height:int):
+        _probs,crop_image= self.inter_module.predict(caption=caption, temp_img=temp_img, new_bbox=tracks.boxes,width=width,height=height,old_images=[])
+        if len(_probs)==0:
+            _probs=torch.Tensor([]).to(tracks.logits.device)
+        mask=_probs>=threshold
+        result=tracks.copy()
+        for i in range(len(mask)):
+            if mask[i] == False:
+                result[0].removePosition(i)
+        return result
 
     def update(self, model_outputs: dict, tracks: List[TrackInstances],
                temp_img=None,inter_module=None,caption="",
@@ -83,34 +127,11 @@ class RuntimeTracker:
         if self.use_motion:
             new_tracks.last_appear_boxes = model_outputs["pred_bboxes"][0][:n_dets][new_tracks_idxes]
         ids = []
-        if inter_module is not None:
+        if self.inter_module is not None and self.filter_type=="active":
            # ================== INTER MODEL ==================
-            if self.with_mem:
-                old_images=tracks[-1].first_images
-            else:
-                old_images=[]
-            _probs,crop_image= inter_module.predict(caption=caption, temp_img=temp_img, new_bbox=new_tracks.boxes,width=width,height=height,old_images=old_images)
-            if len(_probs)==0:
-                _probs=torch.Tensor([]).to(new_tracks.logits.device)
-            mask=_probs>=threshold
-            new_image_len=len(new_tracks.boxes)
-            previous_image_len=len(tracks[-1].boxes)
-            probs = _probs.tolist()
-            # print("true_objects : "+ str(sum(mask) ))
-            latency=0
-            if self.with_mem:
-                new_tracks.setFirstImage(crop_image,probs[:new_image_len])
-            for i in range(new_image_len):
-                if mask[i] == False:
-                    new_tracks.removePosition(i-latency)
-                    latency+=1
-            latency=0
-            tracks[-1].setProbs(probs[new_image_len:])
-            for i in range(previous_image_len):
-                if mask[i+new_image_len] == False:
-                    tracks[-1].removePosition(i-latency)
-                    latency+=1
-        # =================================================
+            new_tracks,tracks=self.active_filter(tracks,new_tracks,temp_img,caption,threshold,width,height)
+            # ================== INTER MODEL ==================
+          
         for i in range(len(new_tracks)):
             ids.append(self.max_obj_id)
             self.max_obj_id += 1

@@ -27,5 +27,5 @@ class PositionEmbeddingSinCos(nn.Module):
         
         
 
-def build(hidden_dim,dropout=0.1):
-    return PositionEmbeddingSinCos(d_model=hidden_dim, dropout=dropout)
+def build(hidden_dim,dropout=0.1,max_len=5000):
+    return PositionEmbeddingSinCos(d_model=hidden_dim, dropout=dropout,max_len=max_len)

@@ -160,9 +160,9 @@ class TextSelfAttentionBlock(nn.Module):
     def __init__(self, d_model,seq_length,num_heads=4, device=None, dropout=0.):
         super().__init__()
         self.d_model = d_model
-        self.ln_1 = nn.LayerNorm(self.d_model, bias=True,device=device)
+        self.ln_1 = nn.LayerNorm(self.d_model,device=device)
         self.attn = CausalSelfAttention(d_model,seq_length, num_heads, dropout=dropout,device=device)
-        self.ln_2 = nn.LayerNorm(self.d_model, bias=True,device=device)
+        self.ln_2 = nn.LayerNorm(self.d_model,device=device)
         self.mlp = MLP(d_model, dropout=dropout,device=device)
 
     def forward(self, x):
@@ -172,7 +172,7 @@ class TextSelfAttentionBlock(nn.Module):
 
     
 class FusionAttention(nn.Module):
-    def __init__(self, d_model, n_heads, device=None,dropout=0.1):
+    def __init__(self, d_model, n_heads, device=None,dropout=0.1,max_len=5000):
         super().__init__()
         assert d_model % n_heads == 0, "The hidden size is not a multiple of the number of attention heads"
 
@@ -200,9 +200,9 @@ class FusionAttention(nn.Module):
         self.mlp=MLP(d_model,dropout,device=device)
         self.mlp_linear =nn.Linear(d_model, d_model,device=device)
 
-        self.global_embedding = build(d_model, dropout=dropout)
-        self.local_embedding_1 = build(d_model, dropout=dropout)
-        self.local_embedding_2 = build(d_model, dropout=dropout)
+        self.global_embedding = build(d_model, dropout=dropout,max_len=max_len)
+        self.local_embedding_1 = build(d_model, dropout=dropout,max_len=max_len)
+        self.local_embedding_2 = build(d_model, dropout=dropout,max_len=max_len)
 
 
         
@@ -368,8 +368,13 @@ class MEX(nn.Module):
         self.local_attn_ = nn.MultiheadAttention(self.img_dim, self.num_heads, dropout=self.dropout,device=self.device)
         self.local_add_norm_ = AddNorm(self.img_dim, dropout=self.dropout,device=self.device)
         self.text_attn_ = TextSelfAttentionBlock(self.feature_dim,self.seq_length, self.num_heads,device=self.device, dropout=self.dropout)
+        if self.is_clip:
+            self.embeded_len=5000
+        else:
+            self.embeded_len=64
 
-        self.weird_attn = FusionAttention(self.feature_dim, self.num_heads,device=self.device, dropout=self.dropout)
+        self.weird_attn = FusionAttention(self.feature_dim, self.num_heads,device=self.device, dropout=self.dropout,max_len=self.embeded_len
+                                          )
 
         transformer_width =768
         #stolen from clip
@@ -432,11 +437,13 @@ class MEX(nn.Module):
         # self attention
         y1,_= self.global_attn_(global_feat,global_feat,global_feat)
         y1 = self.global_add_norm_(y1,global_feat)
-        y1= self.img_fc_global(y1)
+        if self.is_clip:
+            y1= self.img_fc_global(y1)
 
         y2,_= self.local_attn_(local_feat,local_feat,local_feat)
         y2 = self.local_add_norm_(y2,local_feat)
-        y2= self.img_fc_local(y2)
+        if self.is_clip:
+            y2= self.img_fc_local(y2)
 
         y3= self.text_attn_(text_feat)
         return y1,y2,y3

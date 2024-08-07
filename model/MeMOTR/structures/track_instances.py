@@ -85,13 +85,16 @@ class TrackInstances:
         res = TrackInstances(frame_height=self.frame_height, frame_width=self.frame_width,
                              hidden_dim=self.hidden_dim, num_classes=self.num_classes)
         for k, v in vars(self).items():
-            if k == "first_images" or k == "probs":
-                result=[]
-                for i in range(len(item)):
-                    flag = item[i].item() if type(item) == torch.Tensor else item[i]
-                    if flag:
-                        result.append(v[i])
-                res.__setattr__(k,result)
+            if k == "first_images" or k == "probs" :
+                try:
+                    result=[]
+                    for i in range(len(item)):
+                        flag = item[i].item() if type(item) == torch.Tensor else item[i]
+                        if flag:
+                            result.append(v[i])
+                    res.__setattr__(k,result)
+                except:
+                    pass
             else:
                 if hasattr(v, "__getitem__") and v.shape[0] != 0:
                     res.__setattr__(k, v[item])

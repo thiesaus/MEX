@@ -164,3 +164,4 @@ pycharm/
 track-dataset/
 checkpoints/
 data_dir/
+wandb/

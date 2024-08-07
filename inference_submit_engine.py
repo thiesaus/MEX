@@ -169,6 +169,8 @@ class SUBMIT_INFERENCE:
             visualize=False, 
             use_dab=self.config["USE_DAB"],
             with_mem=self.config["INF_W_MEM"],
+            filter_type=self.config["FILTER_TYPE"],
+            inter_module=self.inter_module,
         )
         with torch.no_grad():
             while frame_id <total_frames:
@@ -193,8 +195,11 @@ class SUBMIT_INFERENCE:
                     )
                 
                     tracks: List[TrackInstances] = self.model.memotr_model.postprocess_single_frame(previous_tracks, new_tracks, None)
-            
-                    tracks_result = tracks[0].to(torch.device("cpu"))
+                    if self.config["FILTER_TYPE"]=="post":
+                        plot_track=tracker.post_process_filter(tracks,temp_img,caption,self.threshold,width,height)
+                    else:
+                        plot_track=tracks
+                    tracks_result = plot_track[0].to(torch.device("cpu"))
                     # ori_h, ori_w = ori_image.shape[1], ori_image.shape[2]
                     ori_h, ori_w = height, width
                     # box = [x, y, w, h]

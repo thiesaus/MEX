@@ -148,8 +148,10 @@ def demo_processing(
     tracks = [TrackInstances(
         hidden_dim=model.memotr_model.hidden_dim,
         num_classes=model.memotr_model.num_classes,
-        use_dab=config["USE_DAB"],
+        use_dab=config["USE_DAB"]
     ).to("cuda")]
+    inter_module=INTERGRATE_MODULE(device=model.module.device, model=model.module,config=config)
+
     tracker = RuntimeTracker(
         det_score_thresh=0.5, 
         track_score_thresh=0.5,
@@ -158,16 +160,17 @@ def demo_processing(
         motion_min_length=0, 
         motion_max_length=0,
         visualize=False, 
+        inter_module=inter_module,
         use_dab=config["USE_DAB"],
-        with_mem=config["INF_W_MEM"]
+        with_mem=config["INF_W_MEM"],
+        filter_type=config["FILTER_TYPE"]
     )
-    inter_module=INTERGRATE_MODULE(device=model.module.device, model=model.module,config=config)
     print("Caption " + caption)
     threshold=config["MODULE_THRESHOLD"]
     mems_report = []
     fps_report = []
     with torch.no_grad():
-        while frame_id <300:
+        while frame_id<total_frames:
             mem=torch.cuda.max_memory_allocated(device=model.module.device) / 1048576
 
             if frame_id % 20 == 0:
@@ -193,7 +196,6 @@ def demo_processing(
                     model_outputs=res,
                     tracks=tracks,
                     temp_img=temp_img,
-                    inter_module=inter_module,
                     caption=caption,
                     threshold=threshold,
                     width=width,
@@ -201,8 +203,13 @@ def demo_processing(
                 )
                
                 tracks: List[TrackInstances] = model.memotr_model.postprocess_single_frame(previous_tracks, new_tracks, None)
-        
-                tracks_result = tracks[0].to(torch.device("cpu"))
+                
+                if config["FILTER_TYPE"]=="post":
+                    plot_track=tracker.post_process_filter(tracks,temp_img,caption,threshold,width,height)
+                else:
+                    plot_track=tracks
+                    
+                tracks_result = plot_track[0].to(torch.device("cpu"))
                 # ori_h, ori_w = ori_image.shape[1], ori_image.shape[2]
                 ori_h, ori_w = height, width
                 # box = [x, y, w, h]
