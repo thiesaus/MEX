@@ -437,22 +437,30 @@ def get_dataloader(mode, opt, dataset='RMOT_Dataset', show=False, **kwargs):
 
 def get_transform(mode, opt, idx):
     if mode == 'train':
-        return T.Compose([
+        train_transform=[
             SquarePad(),
             T.RandomResizedCrop(
                 opt["IMG_HW"][idx],
                 ratio=opt["RANDOM_CROP_RATIO"]
             ),
-            T.ToTensor(),
-            T.Normalize(opt["NORM_MEAN"], opt["NORM_STD"]),
-        ])
+            T.ToTensor()
+        ]
+        if opt["IMG_ENCODER"] == 'clip':
+            train_transform.append(
+                T.Normalize(opt["NORM_MEAN"], opt["NORM_STD"]),
+            )
+        return T.Compose(train_transform)
     elif mode == 'test':
-        return T.Compose([
+        test_transform= [
             SquarePad(),
             T.Resize(opt["IMG_HW"][idx]),
             T.ToTensor(),
-            T.Normalize(opt["NORM_MEAN"], opt['NORM_STD']),
-        ])
+        ]
+        if opt["IMG_ENCODER"] == 'clip':
+            test_transform.append(
+                T.Normalize(opt["NORM_MEAN"], opt["NORM_STD"]),
+            )
+        return T.Compose(test_transform)
     elif mode == 'unnorm':
         mean = opt["NORM_MEAN"]
         std = opt['NORM_STD']
